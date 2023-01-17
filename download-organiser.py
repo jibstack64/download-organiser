@@ -18,7 +18,7 @@ if not os.path.isdir(downloads):
     downloads = exp("~/Downloads") if os.path.isdir(exp("~/Downloads")) else ""
     if downloads == "":
         fatal("no download folder found.")
-os.chdir(downloads) # change current directory to downloads
+os.chdir(exp("~")) # change current directory to downloads - changed!
 
 # get all files in downloads
 files = os.listdir(downloads)
@@ -27,25 +27,35 @@ for x in files.copy():
         files.remove(x)
 mapping: dict[str, list[str]] = {}
 for f in files:
-    ext = f.split(".")[-1]
+    if f.find(".") == -1:
+        ext = "no-extension"
+    else:
+        ext = f.split(".")[-1].lower() # for JPG jpg etc
     if mapping.get(ext) == None:
         mapping[ext] = []
     mapping[ext].append(f)
 
 # move files and create appropriate directories
 for extension, fs in mapping.items():
-    if not os.path.isdir(extension):
-        os.mkdir(extension)
+    if os.path.exists(f"{downloads}/{extension}") and os.path.isfile(f"{downloads}/{extension}"):
+        error(f"'{extension}' is a file! exitting...")
+        exit(1)
+    else:
+        if not os.path.isdir(f"{downloads}/{extension}"):
+            os.mkdir(f"{downloads}/{extension}")
     for file in fs:
-        while file in os.listdir(f"{downloads}/{extension}"):
-            error(f"file of name '{file}' already present in {extension}. enter a new name:")
+        name = file
+        while name in os.listdir(f"{downloads}/{extension}"):
+            error(f"file of name '{file}' already present in '{extension}'. enter a new name:")
             name = input("> ")
             if name != "":
-                file = name
-        os.rename(f"{downloads}/{file}", f"{downloads}/{extension}/{file}")
+                break
+        os.rename(f"{downloads}/{file}", f"{downloads}/{extension}/{name}")
 
 # correct any files that are in their wrong folders
 for dir in os.listdir(downloads):
+    if not os.path.isdir(dir):
+        continue
     for file in os.listdir(dir):
         if not file.endswith("."+dir):
             ext = file.split(".")[-1]
